@@ -2,6 +2,7 @@
 require "../bootstrap.php";
 use Src\Controller\PersonController;
 use Src\Controller\ProductController;
+use Src\Controller\AuthController;
 
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
@@ -33,7 +34,12 @@ if($uri[1] == 'product'){
     $controller = new ProductController();
     $controller->index();
     //$controller->processRequest();
-} else{
+} 
+elseif($uri[1] == 'user' && $uri[2] == 'signup'){
+    $controller = new AuthController($dbConnection);
+    $controller->signup();
+}
+else{
     $controller = new PersonController($dbConnection, $requestMethod, $userId);
     $controller->processRequest();
 }
