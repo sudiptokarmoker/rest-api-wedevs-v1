@@ -1,5 +1,6 @@
 <?php
 namespace Src\Controller;
+use \Firebase\JWT\JWT;
 
 class AuthController
 {
@@ -31,14 +32,17 @@ class AuthController
         //$databaseService = new DatabaseService();
         $conn = $this->db;
 
+        /*
         $data = json_decode(file_get_contents("php://input"));
-
-        //echo json_encode($data);
-
         $firstname = $data->firstname;
         $lastname = $data->lastname;
         $email = $data->email;
         $password = $data->password;
+         */
+        $firstname = $_REQUEST['firstname'];
+        $lastname = $_REQUEST['lastname'];
+        $email = $_REQUEST['email'];
+        $password = $_REQUEST['password'];
 
         $table_name = 'Users';
 
@@ -50,8 +54,8 @@ class AuthController
 
         $stmt = $conn->prepare($query);
 
-        $stmt->bindParam(':firstname', $firstName);
-        $stmt->bindParam(':lastname', $lastName);
+        $stmt->bindParam(':firstname', $firstname);
+        $stmt->bindParam(':lastname', $lastname);
         $stmt->bindParam(':email', $email);
 
         $password_hash = password_hash($password, PASSWORD_BCRYPT);
@@ -59,7 +63,6 @@ class AuthController
         $stmt->bindParam(':password', $password_hash);
 
         if ($stmt->execute()) {
-
             http_response_code(200);
             echo json_encode(array("message" => "User was successfully registered."));
         } else {
