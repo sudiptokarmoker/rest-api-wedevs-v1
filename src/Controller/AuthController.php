@@ -4,6 +4,7 @@ namespace Src\Controller;
 use Firebase\JWT\JWT;
 use PDO;
 
+
 class AuthController
 {
     private $db;

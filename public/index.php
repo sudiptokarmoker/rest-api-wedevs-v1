@@ -31,9 +31,9 @@ if (isset($uri[2])) {
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
 // pass the request method and user ID to the PersonController and process the HTTP request:
-if($uri[1] == 'product'){
-    $controller = new ProductController();
-    $controller->index();
+if($uri[1] == 'product' && $uri[2] == 'insert'){
+    $controller = new ProductController($dbConnection);
+    $controller->insert_product();
 } 
 elseif($uri[1] == 'user' && $uri[2] == 'signup'){
     $controller = new AuthController($dbConnection);
