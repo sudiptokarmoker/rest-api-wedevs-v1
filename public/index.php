@@ -33,7 +33,7 @@ $requestMethod = $_SERVER["REQUEST_METHOD"];
 // pass the request method and user ID to the PersonController and process the HTTP request:
 if($uri[1] == 'product' && $uri[2] == 'insert'){
     $controller = new ProductController($dbConnection);
-    $controller->insert_product();
+    $controller->insert();
 } 
 elseif($uri[1] == 'user' && $uri[2] == 'signup'){
     $controller = new AuthController($dbConnection);

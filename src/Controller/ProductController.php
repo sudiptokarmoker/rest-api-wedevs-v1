@@ -1,13 +1,17 @@
 <?php
 namespace Src\Controller;
+
+use PDO;
 use Src\Model\User;
 
 class ProductController
 {
-    private $db;
+    private $db, $user;
+
     public function __construct($db)
     {
         $this->db = $db;
+        $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
     public function index()
     {
@@ -16,36 +20,68 @@ class ProductController
             'status' => "called",
         ]);
     }
-    public function insert_product()
+    public function insert()
     {
         /**
          * Check auth here
          */
         $isValidToken = new User();
-        $user = $isValidToken->auth();
-        echo json_encode([
-            'user' => intval($user['id'])
-        ]);
-        http_response_code(200);
-        die();
+        $this->user = $isValidToken->auth();
+        if ($this->user) {
 
-        $name = $_REQUEST['name'];
-        $description = $_REQUEST['description'];
-        $category_id = $_REQUEST['category_id'];
-        $price = $_REQUEST['price'];
-        $image = $_REQUEST['image'];
-        //$product_owner_user_id = 
+            // echo json_encode([
+            //     'user' => intval($user['id'])
+            // ]);
+            // http_response_code(200);
+            // die();
 
-        $table_name = 'prodcut';
+            $name = $_REQUEST['name'];
+            $sku = $_REQUEST['sku'];
+            $description = $_REQUEST['description'];
+            $category = $_REQUEST['category'];
+            $price = $_REQUEST['price'];
+            //$image = $_REQUEST['image'];
+            //$product_owner_user_id =
 
+            // echo json_encode([
+            //     'name' => $_REQUEST['name'],
+            //     'sku' => $_REQUEST['sku']
+            // ]);
+            // http_response_code(200);
+            // die();
 
-        $query = "INSERT INTO " . $table_name . "
+            $table_name = 'product';
+
+            $query = "INSERT INTO " . $table_name . "
                         SET name = :name,
+                        sku = :sku,
                         description = :description,
-                        category_id = :category_id,
+                        category = :category,
                         price = :price,
-                            user_type =: user_type";
+                        product_owner_user_id = :user_id";
+
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':name', $name);
+            $stmt->bindParam(':sku', $sku);
+            $stmt->bindParam(':description', $description);
+            $stmt->bindParam(':category', $category);
+            $stmt->bindParam(':price', $price);
+            $stmt->bindParam(':user_id', $this->user['id']);
+
+            try {
+                $stmt->execute();
+                echo json_encode(array("message" => "Product successfully created"));
+                http_response_code(200);
+            } catch (\PDOException $e) {
+                echo json_encode(array("message" => "Unable to create product", "error" => $e->getMessage()));
+                http_response_code(400);
+            }
+        } else {
+            echo json_encode(array("message" => "Unathorized User"));
+            http_response_code(403);
+        }
     }
+
     public function view_product()
     {
 
