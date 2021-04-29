@@ -57,7 +57,7 @@ class ProductController
             /**
              * Image upload script here
              */
-            if (isset($_FILES['image'])) {
+            if (!empty($_FILES['image'])) {
                 $file = $_FILES['image']['name'];
                 $target_dir = "../uploads/";
                 $path = pathinfo($file);
