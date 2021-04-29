@@ -35,6 +35,18 @@ if($uri[1] == 'product' && $uri[2] == 'insert'){
     $controller = new ProductController($dbConnection);
     $controller->insert();
 } 
+elseif($uri[1] == 'product' && $uri[2] == 'show'){
+    $controller = new ProductController($dbConnection);
+    $controller->show($uri[3]);
+} 
+elseif($uri[1] == 'product' && $uri[2] == 'update'){
+    $controller = new ProductController($dbConnection);
+    $controller->update();
+} 
+elseif($uri[1] == 'product' && $uri[2] == 'delete'){
+    $controller = new ProductController($dbConnection);
+    $controller->delete();
+} 
 elseif($uri[1] == 'user' && $uri[2] == 'signup'){
     $controller = new AuthController($dbConnection);
     $controller->signup();

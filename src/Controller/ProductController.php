@@ -2,6 +2,7 @@
 namespace Src\Controller;
 
 use PDO;
+use PDOException;
 use Src\Model\User;
 
 class ProductController
@@ -28,28 +29,11 @@ class ProductController
         $isValidToken = new User();
         $this->user = $isValidToken->auth();
         if ($this->user) {
-            // $target_dir = dirname("\uploads");
-
-            // echo json_encode([
-            //     'file' => $target_dir
-            // ]);
-            // http_response_code(200);
-            // die();
-
             $name = $_POST['name'];
             $sku = $_POST['sku'];
             $description = $_POST['description'];
             $category = $_POST['category'];
             $price = $_POST['price'];
-            //$image = $_REQUEST['image'];
-            //$product_owner_user_id =
-
-            // echo json_encode([
-            //     'name' => $_REQUEST['name'],
-            //     'sku' => $_REQUEST['sku']
-            // ]);
-            // http_response_code(200);
-            // die();
 
             $table_name = 'product';
 
@@ -63,52 +47,36 @@ class ProductController
                         image = :image_file";
 
             $stmt = $this->db->prepare($query);
-            
+
             $stmt->bindParam(':name', $name);
             $stmt->bindParam(':sku', $sku);
             $stmt->bindParam(':description', $description);
             $stmt->bindParam(':category', $category);
             $stmt->bindParam(':price', $price);
             $stmt->bindParam(':user_id', $this->user['id']);
-
             /**
              * Image upload script here
              */
-            //$target_dir = "uploads";
+            if (isset($_FILES['image'])) {
+                $file = $_FILES['image']['name'];
+                $target_dir = "../uploads/";
+                $path = pathinfo($file);
+                $filename = $path['filename'];
+                $ext = $path['extension'];
+                $temp_name = $_FILES['image']['tmp_name'];
+                $path_filename_ext = $target_dir . $filename . "." . $ext;
 
-            $target_dir = "../uploads/";
-            $file = $_FILES['image']['name'];
-            $path = pathinfo($file);
-            $filename = $path['filename'];
-            $ext = $path['extension'];
-            $temp_name = $_FILES['image']['tmp_name'];
-            $path_filename_ext = $target_dir . $filename . "." . $ext;
-
-            $filenameWithExtension = $filename . "." . $ext;
-            // Check if file already exists
-            if (file_exists($path_filename_ext)) {
-                //echo "Sorry, file already exists.";
-                $stmt->bindParam(':image_file', null);
+                $filenameWithExtension = $filename . "." . $ext;
+                // Check if file already exists
+                if (file_exists($path_filename_ext)) {
+                    $stmt->bindParam(':image_file', null);
+                } else {
+                    move_uploaded_file($temp_name, $path_filename_ext);
+                    $stmt->bindParam(':image_file', $filenameWithExtension);
+                }
             } else {
-                move_uploaded_file($temp_name, $path_filename_ext);
-                $stmt->bindParam(':image_file', $filenameWithExtension);
-                //echo "Congratulations! File Uploaded Successfully.";
+                $stmt->bindParam(':image_file', null);
             }
-
-            // $target_dir = dirname("uploads");
-
-            // $target_file = $target_dir . basename($_FILES["image"]["name"]);
-            // $uploadOk = 1;
-            // $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
-            // $check = getimagesize($_FILES["image"]["tmp_name"]);
-            // $filename = basename($_FILES["image"]["name"]);
-            // if ($check !== false) {
-            //     if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
-            //         $stmt->bindParam(':image_file', $filename);
-            //     }
-            // } else {
-            //     $stmt->bindParam(':image', null);
-            // }
             /**
              * Image upload script end
              */
@@ -126,8 +94,129 @@ class ProductController
         }
     }
 
-    public function view_product()
+    public function show($id)
     {
+        // echo json_encode([
+        //     'id' => $id
+        // ]);
+        //$id = intval($_id);
+        // echo json_encode([
+        //     'id' => $id
+        // ]);
+        $stmt = $this->db->prepare("SELECT * FROM product WHERE id=?");
+        $stmt->execute([$id]);
+        $product = $stmt->fetch();
 
+        echo json_encode([
+            'product' => $product,
+        ]);
+        http_response_code(200);
+    }
+
+    public function update()
+    {
+        $isValidToken = new User();
+        $this->user = $isValidToken->auth();
+        if ($this->user) {
+            try {
+                if (isset($_FILES['image'])) {
+                    /**
+                     * Delete old file and upload new file
+                     */
+                    $stmt = $this->db->prepare("SELECT image FROM product WHERE id=? AND product_owner_user_id=?");
+                    $stmt->execute(
+                        [
+                            $_POST['id'],
+                            $this->user['id'],
+                        ]);
+                    $image_data = $stmt->fetch();
+                    $target_dir = "../uploads/";
+                    if ($image_data) {
+                        unlink($target_dir . $image_data['image']);
+                    }
+                    /**
+                     * Now insert updated image
+                     */
+                    $file = $_FILES['image']['name'];
+                    $path = pathinfo($file);
+                    $filename = $path['filename'];
+                    $ext = $path['extension'];
+                    $temp_name = $_FILES['image']['tmp_name'];
+                    $path_filename_ext = $target_dir . $filename . "." . $ext;
+
+                    $filenameWithExtension = $filename . "." . $ext;
+
+                    move_uploaded_file($temp_name, $path_filename_ext);
+
+                    $data = [
+                        'name' => $_POST['name'],
+                        'sku' => $_POST['sku'],
+                        'description' => $_POST['description'],
+                        'category' => $_POST['category'],
+                        'price' => $_POST['price'],
+                        'id' => $_POST['id'],
+                        'product_owner_user_id' => $this->user['id'],
+                        'image' => $filenameWithExtension,
+                    ];
+                    $sql = "UPDATE product SET name=:name, sku=:sku, description=:description, category=:category, price=:price, image=:image WHERE id=:id AND product_owner_user_id=:product_owner_user_id";
+                } else {
+                    $data = [
+                        'name' => $_POST['name'],
+                        'sku' => $_POST['sku'],
+                        'description' => $_POST['description'],
+                        'category' => $_POST['category'],
+                        'price' => $_POST['price'],
+                        'id' => $_POST['id'],
+                        'product_owner_user_id' => $this->user['id'],
+                    ];
+                    $sql = "UPDATE product SET name=:name, sku=:sku, description=:description, category=:category, price=:price WHERE id=:id AND product_owner_user_id=:product_owner_user_id";
+                }
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute($data);
+                echo json_encode([
+                    'status' => true,
+                ]);
+                http_response_code(200);
+            } catch (PDOException $e) {
+                echo json_encode([
+                    'status' => false,
+                    'error' => $e->getMessage(),
+                ]);
+                http_response_code(400);
+            }
+        }
+    }
+    /**
+     * Delete image
+     */
+    public function delete()
+    {
+        $isValidToken = new User();
+        $this->user = $isValidToken->auth();
+        if ($this->user) {
+            try {
+                $stmt = $this->db->prepare("SELECT * FROM product WHERE id=? AND product_owner_user_id=?");
+                $stmt->execute(
+                    [
+                        $_POST['id'],
+                        $this->user['id'],
+                    ]);
+                $product = $stmt->fetch();
+                if ($product) {
+                    $sql = "DELETE FROM product WHERE id=" . $_POST['id'];
+                    $this->db->exec($sql);
+                    echo json_encode([
+                        'status' => true,
+                    ]);
+                }
+            } catch (PDOException $e) {
+                echo $sql . "<br>" . $e->getMessage();
+            }
+        } else {
+            echo json_encode([
+                'status' => false,
+                'error' => 'Unauthorized User',
+            ]);
+        }
     }
 }
