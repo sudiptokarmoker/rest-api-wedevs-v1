@@ -57,7 +57,7 @@ class ProductController
             /**
              * Image upload script here
              */
-            if (!empty($_FILES['image'])) {
+            if (isset($_FILES['image'])) {
                 $file = $_FILES['image']['name'];
                 $target_dir = "../uploads/";
                 $path = pathinfo($file);
@@ -69,13 +69,15 @@ class ProductController
                 $filenameWithExtension = $filename . "." . $ext;
                 // Check if file already exists
                 if (file_exists($path_filename_ext)) {
-                    $stmt->bindParam(':image_file', null);
+                    $empty_file = null;
+                    $stmt->bindParam(':image_file', $empty_file);
                 } else {
                     move_uploaded_file($temp_name, $path_filename_ext);
                     $stmt->bindParam(':image_file', $filenameWithExtension);
                 }
             } else {
-                $stmt->bindParam(':image_file', null);
+                $empty_file = null;
+                $stmt->bindParam(':image_file', $empty_file);
             }
             /**
              * Image upload script end
