@@ -39,7 +39,7 @@ class OrderController
                      * Now insert into DB this order information
                      */
                     $tableName = 'order';
-                    $orderStatus = 'PAID';
+                    $orderStatus = 'Processing';
                     $userId = intval($this->user['id']);
 
                     $queryInsert = "INSERT INTO `order` SET product_id = :product_id, order_by_user_id = :order_by_user_id,order_status = :order_status";
