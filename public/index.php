@@ -1,8 +1,9 @@
 <?php
 require "../bootstrap.php";
-use Src\Controller\PersonController;
-use Src\Controller\ProductController;
+
 use Src\Controller\AuthController;
+use Src\Controller\OrderController;
+use Src\Controller\ProductController;
 
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
@@ -10,60 +11,48 @@ header("Access-Control-Allow-Methods: OPTIONS,GET,POST,PUT,DELETE");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$uri = explode( '/', $uri );
-
-// all of our endpoints start with /person
-// everything else results in a 404 Not Found
-
-// if ($uri[1] !== 'person') {
-//     header("HTTP/1.1 404 Not Found");
-//     exit();
-// }
-
-// the user id is, of course, optional and must be a number:
-$userId = null;
-if (isset($uri[2])) {
-    $userId = (int) $uri[2];
-}
+$uri = explode('/', $uri);
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
 // pass the request method and user ID to the PersonController and process the HTTP request:
-if($uri[1] == 'product' && $uri[2] == 'insert'){
+if ($uri[1] == 'order' && $uri[2] == 'create') {
+    $controller = new OrderController($dbConnection);
+    $controller->create();
+} elseif ($uri[1] == 'order' && $uri[2] == 'status') {
+    $controller = new OrderController($dbConnection);
+    $controller->order_status();
+} elseif ($uri[1] == 'order' && $uri[2] == 'update') {
+    $controller = new OrderController($dbConnection);
+    $controller->order_status_update();
+} elseif ($uri[1] == 'product' && $uri[2] == 'insert') {
     $controller = new ProductController($dbConnection);
     $controller->insert();
-} 
-elseif($uri[1] == 'product' && $uri[2] == 'show'){
+} elseif ($uri[1] == 'product' && $uri[2] == 'show') {
     $controller = new ProductController($dbConnection);
     $controller->show($uri[3]);
-} 
-elseif($uri[1] == 'product' && $uri[2] == 'update'){
+} elseif ($uri[1] == 'product' && $uri[2] == 'update') {
     $controller = new ProductController($dbConnection);
     $controller->update();
-} 
-elseif($uri[1] == 'product' && $uri[2] == 'delete'){
+} elseif ($uri[1] == 'product' && $uri[2] == 'delete') {
     $controller = new ProductController($dbConnection);
     $controller->delete();
-} 
-elseif($uri[1] == 'user' && $uri[2] == 'signup'){
+} elseif ($uri[1] == 'user' && $uri[2] == 'signup') {
     $controller = new AuthController($dbConnection);
     $controller->signup();
-}
-elseif($uri[1] == 'user' && $uri[2] == 'login'){
+} elseif ($uri[1] == 'user' && $uri[2] == 'login') {
     $controller = new AuthController($dbConnection);
     $controller->login();
-}
-elseif($uri[1] == 'user' && $uri[2] == 'auth'){
+} elseif ($uri[1] == 'user' && $uri[2] == 'auth') {
     $controller = new AuthController($dbConnection);
     $controller->auth_check();
-}
-elseif($uri[1] == 'user' && $uri[2] == 'token_verify'){
+} elseif ($uri[1] == 'user' && $uri[2] == 'token_verify') {
     $controller = new AuthController($dbConnection);
     $controller->token_verify();
-}
-else{
-    $controller = new PersonController($dbConnection, $requestMethod, $userId);
-    $controller->processRequest();
+} else {
+    echo json_encode([
+        'status' => "Bad routing request",
+    ]);
+    http_response_code(400);
 }

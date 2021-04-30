@@ -25,18 +25,13 @@ class User
                 if ($decoded) {
                     return [
                         'id' => $decoded->data->id,
-                        'email' => $decoded->data->id
+                        'email' => $decoded->data->id,
+                        'user_type' => $decoded->data->user_type
                     ];
-                    //return true;
                 } else {
                     return false;
                 }
             } catch (\Exception $e) {
-                // http_response_code(401);
-                // echo json_encode(array(
-                //     "message" => "Access denied.",
-                //     "error" => $e->getMessage(),
-                // ));
                 return false;
             }
         }

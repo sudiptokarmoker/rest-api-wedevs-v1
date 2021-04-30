@@ -3,7 +3,7 @@ namespace Src\Controller;
 
 use Firebase\JWT\JWT;
 use PDO;
-
+use PDOException;
 
 class AuthController
 {
@@ -12,21 +12,16 @@ class AuthController
     public function __construct($db)
     {
         $this->db = $db;
+        $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
 
     public function login()
     {
-        // header("Access-Control-Allow-Origin: *");
-        // header("Content-Type: application/json; charset=UTF-8");
-        // header("Access-Control-Allow-Methods: POST");
-        // header("Access-Control-Max-Age: 3600");
-        // header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
-
         $email = $_REQUEST['email'];
         $password = $_REQUEST['password'];
         $table_name = 'users';
 
-        $query = "SELECT id, firstname, lastname, password FROM " . $table_name . " WHERE email = ? LIMIT 0,1";
+        $query = "SELECT id, firstname, lastname, user_type, password FROM " . $table_name . " WHERE email = ? LIMIT 0,1";
         $stmt = $this->db->prepare($query);
         $stmt->bindParam(1, $email);
         $stmt->execute();
@@ -38,6 +33,7 @@ class AuthController
             $firstname = $row['firstname'];
             $lastname = $row['lastname'];
             $password2 = $row['password'];
+            $user_type = $row['user_type'];
 
             if (password_verify($password, $password2)) {
                 $secret_key = "WEDEVS";
@@ -57,6 +53,7 @@ class AuthController
                         "firstname" => $firstname,
                         "lastname" => $lastname,
                         "email" => $email,
+                        "user_type" => $user_type,
                     ));
                 http_response_code(200);
                 $jwt = JWT::encode($token, $secret_key);
@@ -77,36 +74,41 @@ class AuthController
 
     public function signup()
     {
-        $firstname = $_REQUEST['firstname'];
-        $lastname = $_REQUEST['lastname'];
-        $email = $_REQUEST['email'];
-        $password = $_REQUEST['password'];
-        $user_type = $_REQUEST['user_type'];
+        try {
+            $firstname = $_POST['firstname'];
+            $lastname = $_POST['lastname'];
+            $email = $_POST['email'];
+            $password = $_POST['password'];
+            $user_type = $_POST['user_type'];
 
-        $table_name = 'users';
+            $table_name = 'users';
 
-        $query = "INSERT INTO " . $table_name . "
-                        SET firstname = :firstname,
-                            lastname = :lastname,
-                            email = :email,
-                            password = :password,
-                            user_type =: user_type";
+            $query = "INSERT INTO " . $table_name . "
+                            SET firstname=:firstname,
+                                lastname=:lastname,
+                                email=:email,
+                                password=:password,
+                                user_type=:user_type";
 
-        $stmt = $this->db->prepare($query);
+            $stmt = $this->db->prepare($query);
 
-        $stmt->bindParam(':firstname', $firstname);
-        $stmt->bindParam(':lastname', $lastname);
-        $stmt->bindParam(':email', $email);
-        $password_hash = password_hash($password, PASSWORD_BCRYPT);
-        $stmt->bindParam(':password', $password_hash);
-        $stmt->bindParam(':user_type', $user_type);
+            $stmt->bindParam(':firstname', $firstname);
+            $stmt->bindParam(':lastname', $lastname);
+            $stmt->bindParam(':email', $email);
+            $password_hash = password_hash($password, PASSWORD_BCRYPT);
+            $stmt->bindParam(':password', $password_hash);
+            $stmt->bindParam(':user_type', $user_type);
 
-        if ($stmt->execute()) {
-            http_response_code(200);
-            echo json_encode(array("message" => "User was successfully registered."));
-        } else {
+            if ($stmt->execute()) {
+                http_response_code(200);
+                echo json_encode(array("message" => "User was successfully registered."));
+            } else {
+                http_response_code(400);
+                echo json_encode(array("message" => "Unable to register the user."));
+            }
+        } catch (\PDOException $e) {
             http_response_code(400);
-            echo json_encode(array("message" => "Unable to register the user."));
+            echo json_encode(array("message" => "Unable to register the user.", "error" => $e->getMessage()));
         }
     }
 
@@ -114,50 +116,26 @@ class AuthController
     {
         $secret_key = "WEDEVS";
         $jwt = null;
-
         $conn = $this->db;
-
         $data = json_decode(file_get_contents("php://input"));
-
         $authHeader = $_SERVER['HTTP_AUTHORIZATION'];
-
         $arr = explode(" ", $authHeader);
-
-        // echo json_encode(array(
-        // "message" => "sd" .$arr[1]
-        // ));
-
         $jwt = $arr[1];
-
         if ($jwt) {
-            // echo json_encode([
-            //     'status' => true,
-            // ]);
             try {
-
                 $decoded = JWT::decode($jwt, $secret_key, array('HS256'));
-                // echo json_encode([
-                //     'status' => true,
-                // ]);
-
                 // Access is granted. Add code of the operation here
-
                 echo json_encode(array(
                     "message" => "Access granted:",
                     "auth" => $decoded,
-                    //"error" => $e->getMessage(),
                 ));
-
             } catch (\Exception $e) {
-
                 http_response_code(401);
-
                 echo json_encode(array(
                     "message" => "Access denied.",
                     "error" => $e->getMessage(),
                 ));
             }
-
         }
     }
 
