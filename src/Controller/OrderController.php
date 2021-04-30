@@ -104,7 +104,6 @@ class OrderController
             if ($this->user && $this->user['user_type'] == 'admin') {
                 $data = [
                     'id' => intval($_POST['order_id']),
-                    //'product_owner_user_id' => intval($_POST['user_id']),
                     'order_status' => $_POST['order_status']
                 ];
                 $sql = "UPDATE `order` SET order_status=:order_status WHERE id=:id";

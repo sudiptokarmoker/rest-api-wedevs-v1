@@ -17,58 +17,66 @@ class AuthController
 
     public function login()
     {
-        $email = $_REQUEST['email'];
-        $password = $_REQUEST['password'];
-        $table_name = 'users';
-
-        $query = "SELECT id, firstname, lastname, user_type, password FROM " . $table_name . " WHERE email = ? LIMIT 0,1";
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(1, $email);
-        $stmt->execute();
-        $num = $stmt->rowCount();
-
-        if ($num > 0) {
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            $id = $row['id'];
-            $firstname = $row['firstname'];
-            $lastname = $row['lastname'];
-            $password2 = $row['password'];
-            $user_type = $row['user_type'];
-
-            if (password_verify($password, $password2)) {
-                $secret_key = "WEDEVS";
-                $issuer_claim = "THE_ISSUER"; // this can be the servername
-                $audience_claim = "THE_AUDIENCE";
-                $issuedat_claim = time(); // issued at
-                $notbefore_claim = $issuedat_claim + 10; //not before in seconds
-                $expire_claim = $issuedat_claim + 600000; // expire time in seconds
-                $token = array(
-                    "iss" => $issuer_claim,
-                    "aud" => $audience_claim,
-                    "iat" => $issuedat_claim,
-                    "nbf" => $notbefore_claim,
-                    "exp" => $expire_claim,
-                    "data" => array(
-                        "id" => $id,
-                        "firstname" => $firstname,
-                        "lastname" => $lastname,
-                        "email" => $email,
-                        "user_type" => $user_type,
-                    ));
-                http_response_code(200);
-                $jwt = JWT::encode($token, $secret_key);
-                echo json_encode(
-                    array(
-                        "message" => "Successful login.",
-                        "jwt" => $jwt,
-                        "email" => $email,
-                        "expireAt" => $expire_claim,
-                    ));
-            } else {
-                echo json_encode([
-                    'status' => 'denied',
-                ]);
+        try{
+            $email = $_REQUEST['email'];
+            $password = $_REQUEST['password'];
+            $table_name = 'users';
+    
+            $query = "SELECT id, firstname, lastname, user_type, password FROM " . $table_name . " WHERE email = ? LIMIT 0,1";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(1, $email);
+            $stmt->execute();
+            $num = $stmt->rowCount();
+    
+            if ($num > 0) {
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                $id = $row['id'];
+                $firstname = $row['firstname'];
+                $lastname = $row['lastname'];
+                $password2 = $row['password'];
+                $user_type = $row['user_type'];
+    
+                if (password_verify($password, $password2)) {
+                    $secret_key = "WEDEVS";
+                    $issuer_claim = "THE_ISSUER"; // this can be the servername
+                    $audience_claim = "THE_AUDIENCE";
+                    $issuedat_claim = time(); // issued at
+                    $notbefore_claim = $issuedat_claim + 10; //not before in seconds
+                    $expire_claim = $issuedat_claim + 600000; // expire time in seconds
+                    $token = array(
+                        "iss" => $issuer_claim,
+                        "aud" => $audience_claim,
+                        "iat" => $issuedat_claim,
+                        "nbf" => $notbefore_claim,
+                        "exp" => $expire_claim,
+                        "data" => array(
+                            "id" => $id,
+                            "firstname" => $firstname,
+                            "lastname" => $lastname,
+                            "email" => $email,
+                            "user_type" => $user_type,
+                        ));
+                    http_response_code(200);
+                    $jwt = JWT::encode($token, $secret_key);
+                    echo json_encode(
+                        array(
+                            "message" => "Successful login.",
+                            "jwt" => $jwt,
+                            "email" => $email,
+                            "expireAt" => $expire_claim,
+                        ));
+                } else {
+                    echo json_encode([
+                        'status' => 'denied',
+                    ]);
+                }
             }
+        } catch(\Exception $e){
+            echo json_encode([
+                'status' => false,
+                'error' => $e->getMessage(),
+            ]);
+            http_response_code(400);
         }
     }
 
