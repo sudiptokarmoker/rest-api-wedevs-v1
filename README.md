@@ -42,3 +42,6 @@ For Parameter list please import json file OF POSTMAN. I am sending that.
 
 # what still need to do:
 - Frontend integration (there is not any Frontent part of this Assignment)
+
+# Featues: 
+- This backened has been made on PSR-4 autoload features using composer
